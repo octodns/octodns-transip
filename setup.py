@@ -29,13 +29,12 @@ setup(
     python_requires='>=3.6',
     install_requires=(
         'octodns>=0.9.14',
-        # TODO: other requirements
+        'python-transip>=0.5.0'
     ),
     url='https://github.com/octodns/octodns-transip',
     version=version(),
     tests_require=(
         'pytest',
         'pytest-network',
-        # TODO: other test-time requirements
     ),
 )

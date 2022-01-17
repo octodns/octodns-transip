@@ -1,5 +1,3 @@
-TODO: Review this README and add or modify as necessary.
-
 ## Transip DNS provider for octoDNS
 
 An [octoDNS](https://github.com/octodns/octodns/) provider that targets [Transip DNS](https://www.transip.eu/knowledgebase/entry/155-dns-and-nameservers/).
@@ -38,21 +36,28 @@ octodns_transip==0.0.1
 providers:
   transip:
     class: octodns_transip.TransipProvider
-    # TODO
+    # Your Transip account name (required)
+    account: env/TRANSIP_ACCOUNT
+    # Path to a private key file (required if key is not used)
+    key_file: /path/to/file
+    # The api key as string (required if key_file is not used)
+    #key: env/TRANSIP_KEY
+    #    -----BEGIN PRIVATE KEY-----
+    #    ...
+    #    -----END PRIVATE KEY-----
+    # if both `key_file` and `key` are presented `key_file` is used
 ```
 
 ### Support Information
 
 #### Records
 
-TODO: All octoDNS record types are supported.
+TransipProvider A, AAAA, CAA, CNAME, MX, NS, SRV, SPF, SSHFP, and TXT
 
 #### Dynamic
 
-TODO: TransipProvider does not support dynamic records.
+TransipProvider does not support dynamic records.
 
 ### Development
 
 See the [/script/](/script/) directory for some tools to help with the development process. They generally follow the [Script to rule them all](https://github.com/github/scripts-to-rule-them-all) pattern. Most useful is `./script/bootstrap` which will create a venv and install both the runtime and development related requirements. It will also hook up a pre-commit hook that covers most of what's run by CI.
-
-TODO: any provider specific setup, a docker compose to run things locally etc?
