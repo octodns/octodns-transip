@@ -248,8 +248,6 @@ class TestTransipProvider(TestCase):
                     "p=A/kinda+of/long/string+with+numb3rs"
                 ),
             },
-            {"name": "@", "expire": 3600, "type": "NS", "content": "6.2.3.4."},
-            {"name": "@", "expire": 3600, "type": "NS", "content": "7.2.3.4."},
             {
                 "name": "cname",
                 "expire": 300,
@@ -326,8 +324,8 @@ class TestTransipProvider(TestCase):
             for e in domain_mock.dns.replace.mock_calls[0][1][0]
         ]
         self.assertEqual(
-            sorted(seen_entries, key=itemgetter("name", "type", "expire")),
             sorted(expected_entries, key=itemgetter("name", "type", "expire")),
+            sorted(seen_entries, key=itemgetter("name", "type", "expire")),
         )
 
     @patch("octodns_transip.TransIP")

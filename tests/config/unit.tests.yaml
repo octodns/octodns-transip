@@ -29,8 +29,8 @@
       fingerprint_type: 1
   - type: NS
     values:
-    - 6.2.3.4.
-    - 7.2.3.4.
+    - 2.2.2.2.
+    - 3.3.3.3.
   - type: CAA
     values:
     - flags: 0
