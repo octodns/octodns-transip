@@ -33,8 +33,9 @@ class TransipNewZoneException(TransipException):
 class TransipProvider(BaseProvider):
     SUPPORTS_GEO = False
     SUPPORTS_DYNAMIC = False
-    SUPPORTS = set(('A', 'AAAA', 'CNAME', 'MX', 'NS', 'SRV', 'SPF', 'TXT',
-                    'SSHFP', 'CAA'))
+    SUPPORTS = set(
+        ('A', 'AAAA', 'CNAME', 'MX', 'NS', 'SRV', 'SPF', 'TXT', 'SSHFP', 'CAA')
+    )
     # unsupported by OctoDNS: 'TLSA'
     MIN_TTL = 120
     TIMEOUT = 15
@@ -42,8 +43,7 @@ class TransipProvider(BaseProvider):
 
     def __init__(self, id, account, key=None, key_file=None, *args, **kwargs):
         self.log = getLogger('TransipProvider[{}]'.format(id))
-        self.log.debug('__init__: id=%s, account=%s, token=***', id,
-                       account)
+        self.log.debug('__init__: id=%s, account=%s, token=***', id, account)
         super(TransipProvider, self).__init__(id, *args, **kwargs)
 
         if key_file is not None:
@@ -59,8 +59,12 @@ class TransipProvider(BaseProvider):
         '''
         Populate the zone with records in-place.
         '''
-        self.log.debug('populate: name=%s, target=%s, lenient=%s', zone.name,
-                       target, lenient)
+        self.log.debug(
+            'populate: name=%s, target=%s, lenient=%s',
+            zone.name,
+            target,
+            lenient,
+        )
 
         before = len(zone.records)
 
@@ -75,13 +79,13 @@ class TransipProvider(BaseProvider):
             elif e.response_code == 404 and target is True:
                 self.log.warning('populate: Transip can\'t create new zones')
                 raise TransipNewZoneException(
-                    ('populate: ({}) Transip used ' +
-                     'as target for non-existing zone: {}').format(
-                        e.response_code, zone.name))
-            else:
-                self.log.error(
-                    'populate: (%s) %s ', e.response_code, e.message
+                    (
+                        'populate: ({}) Transip used '
+                        + 'as target for non-existing zone: {}'
+                    ).format(e.response_code, zone.name)
                 )
+            else:
+                self.log.error('populate: (%s) %s ', e.response_code, e.message)
                 raise TransipException(
                     'Unhandled error: ({}) {}'.format(
                         e.response_code, e.message
@@ -111,16 +115,16 @@ class TransipProvider(BaseProvider):
                         lenient=lenient,
                     )
                     zone.add_record(record, lenient=lenient)
-        self.log.info('populate:   found %s records',
-                      len(zone.records) - before)
+        self.log.info(
+            'populate:   found %s records', len(zone.records) - before
+        )
 
         return True
 
     def _apply(self, plan):
         desired = plan.desired
         changes = plan.changes
-        self.log.debug('apply: zone=%s, changes=%d', desired.name,
-                       len(changes))
+        self.log.debug('apply: zone=%s, changes=%d', desired.name, len(changes))
 
         try:
             domain = self._client.domains.get(plan.desired.name[:-1])

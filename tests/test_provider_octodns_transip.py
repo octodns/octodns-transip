@@ -11,9 +11,15 @@ from octodns.provider.yaml import YamlProvider
 from octodns.zone import Zone
 from transip.exceptions import TransIPHTTPError
 
-from octodns_transip import (DNSEntry, TransipConfigException,
-                             TransipException, TransipNewZoneException,
-                             TransipProvider, _entries_for, _parse_to_fqdn)
+from octodns_transip import (
+    DNSEntry,
+    TransipConfigException,
+    TransipException,
+    TransipNewZoneException,
+    TransipProvider,
+    _entries_for,
+    _parse_to_fqdn,
+)
 
 
 def make_expected():
@@ -116,8 +122,9 @@ class TestTransipProvider(TestCase):
     def test_populate_zone_exists_not_target(self, mock_client):
         # Happy Plan - Populate
         source_zone, api_records = make_mock()
-        mock_client.return_value.domains.get.return_value.dns.list. \
-            return_value = api_records
+        mock_client.return_value.domains.get.return_value.dns.list.return_value = (
+            api_records
+        )
         provider = TransipProvider("test", "unittest", self.bogus_key)
         zone = Zone("unit.tests.", [])
 
