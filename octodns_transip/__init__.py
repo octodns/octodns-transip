@@ -44,7 +44,7 @@ class TransipProvider(BaseProvider):
     def __init__(self, id, account, key=None, key_file=None, *args, **kwargs):
         self.log = getLogger('TransipProvider[{}]'.format(id))
         self.log.debug('__init__: id=%s, account=%s, token=***', id, account)
-        super(TransipProvider, self).__init__(id, *args, **kwargs)
+        super().__init__(id, *args, **kwargs)
 
         if key_file is not None:
             self._client = TransIP(login=account, private_key_file=key_file)
