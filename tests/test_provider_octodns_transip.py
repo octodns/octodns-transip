@@ -155,7 +155,9 @@ class TestTransipProvider(TestCase):
     @patch("octodns_transip.TransIP", make_mock_empty())
     def test_plan(self):
         # Test happy plan, only create
-        provider = TransipProvider("test", "unittest", self.bogus_key)
+        provider = TransipProvider(
+            "test", "unittest", self.bogus_key, strict_supports=False
+        )
 
         plan = provider.plan(make_expected())
 
@@ -170,7 +172,9 @@ class TestTransipProvider(TestCase):
         domain_mock = Mock()
         client_mock.return_value.domains.get.return_value = domain_mock
         domain_mock.dns.list.return_value = []
-        provider = TransipProvider("test", "unittest", self.bogus_key)
+        provider = TransipProvider(
+            "test", "unittest", self.bogus_key, strict_supports=False
+        )
 
         plan = provider.plan(make_expected())
         self.assertIsNotNone(plan)
@@ -341,7 +345,9 @@ class TestTransipProvider(TestCase):
         domain_mock = Mock()
         client_mock.return_value.domains.get.return_value = domain_mock
         domain_mock.dns.list.return_value = []
-        provider = TransipProvider("test", "unittest", self.bogus_key)
+        provider = TransipProvider(
+            "test", "unittest", self.bogus_key, strict_supports=False
+        )
 
         plan = provider.plan(make_expected())
         self.assertIsNotNone(plan)
@@ -387,7 +393,9 @@ class TestTransipProvider(TestCase):
             domain_mock,
             TransIPHTTPError("Not Found", 404),
         ]
-        provider = TransipProvider("test", "unittest", self.bogus_key)
+        provider = TransipProvider(
+            "test", "unittest", self.bogus_key, strict_supports=False
+        )
 
         plan = provider.plan(make_expected())
 
@@ -403,7 +411,9 @@ class TestTransipProvider(TestCase):
             TransIPHTTPError("Not Found", 500)
         ]
         client_mock.return_value.domains.get.return_value = domain_mock
-        provider = TransipProvider("test", "unittest", self.bogus_key)
+        provider = TransipProvider(
+            "test", "unittest", self.bogus_key, strict_supports=False
+        )
 
         plan = provider.plan(make_expected())
 
