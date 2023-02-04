@@ -9,9 +9,9 @@ from transip import TransIP
 from transip.exceptions import TransIPHTTPError
 from transip.v6.objects import DnsEntry
 
-from octodns.record import Record
 from octodns.provider import ProviderException
 from octodns.provider.base import BaseProvider
+from octodns.record import Record
 
 __VERSION__ = '0.0.1'
 
