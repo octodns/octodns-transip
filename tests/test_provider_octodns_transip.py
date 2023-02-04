@@ -7,9 +7,10 @@ from os.path import dirname, join
 from unittest import TestCase
 from unittest.mock import Mock, patch
 
+from transip.exceptions import TransIPHTTPError
+
 from octodns.provider.yaml import YamlProvider
 from octodns.zone import Zone
-from transip.exceptions import TransIPHTTPError
 
 from octodns_transip import (
     DNSEntry,
@@ -65,7 +66,6 @@ def make_failing_mock(response_code):
 
 
 class TestTransipProvider(TestCase):
-
     bogus_key = "-----BEGIN RSA PRIVATE KEY-----Z-----END RSA PRIVATE KEY-----"
 
     @patch("octodns_transip.TransIP", make_mock_empty())
