@@ -141,8 +141,8 @@ class TestTransipProvider(TestCase):
             if r._type in TransipProvider.SUPPORTS:
                 if hasattr(r, "geo"):
                     r.geo = None
-                expected.add(r.__repr__())
-        self.assertEqual({r.__repr__() for r in zone.records}, expected)
+                expected.add(str(r.data))
+        self.assertEqual({str(r.data) for r in zone.records}, expected)
 
     @patch("octodns_transip.TransIP", make_mock_empty())
     def test_populate_zone_exists_as_target(self):
