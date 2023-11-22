@@ -141,7 +141,10 @@ class TestTransipProvider(TestCase):
             if r._type in TransipProvider.SUPPORTS:
                 if hasattr(r, "geo"):
                     r.geo = None
-                expected.add(str(r.data))
+                data = r.data
+                # we want to ignore the octodns bits
+                data.pop('octodns', None)
+                expected.add(str(data))
         self.assertEqual({str(r.data) for r in zone.records}, expected)
 
     @patch("octodns_transip.TransIP", make_mock_empty())
