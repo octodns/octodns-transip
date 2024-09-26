@@ -19,6 +19,9 @@
     - 1.2.3.4
     - 1.2.3.5
   - ttl: 3600
+    type: ALIAS
+    value: www.example.com.
+  - ttl: 3600
     type: SSHFP
     values:
     - algorithm: 1
@@ -76,6 +79,18 @@ dname:
   ttl: 300
   type: DNAME
   value: unit.tests.
+ds:
+  ttl: 300
+  type: DS
+  values:
+    - algorithm: 1
+      digest: 'abcdef0123456'
+      digest_type: 2
+      key_tag: 0
+    - algorithm: 1
+      digest: 'abcdef0123456'
+      digest_type: 2
+      key_tag: 1
 excluded:
   octodns:
     excluded:
@@ -162,6 +177,28 @@ sub:
   values:
   - 6.2.3.4.
   - 7.2.3.4.
+sub.txt:
+  type: 'NS'
+  values:
+  - ns1.test.
+  - ns2.test.
+subzone:
+  type: 'NS'
+  values:
+  - 192.0.2.1.
+  - 192.0.2.8.
+tlsa:
+  tll: 600
+  type: 'TLSA'
+  values:
+    - certificate_association_data: ABABABABABABABABAB
+      certificate_usage: 1
+      matching_type: 1
+      selector: 1
+    - certificate_association_data: ABABABABABABABABAC
+      certificate_usage: 2
+      matching_type: 2
+      selector: 0
 txt:
   ttl: 600
   type: TXT

@@ -36,6 +36,8 @@ octodns-transip==0.0.1
 providers:
   transip:
     class: octodns_transip.TransipProvider
+    # Enable root NS management (optional, Defaults to False)
+    enable_root_ns: True 
     # Your Transip account name (required)
     account: env/TRANSIP_ACCOUNT
     # Path to a private key file (required if key is not used)
@@ -52,7 +54,22 @@ providers:
 
 #### Records
 
-TransipProvider A, AAAA, CAA, CNAME, MX, NS, SRV, SPF, SSHFP, and TXT
+TransipProvider A, AAAA, ALIAS, CAA, CNAME, DS, MX, NAPTR, NS, SPF, SRV, SSHFP, TLSA, TXT
+
+#### Root NS records
+
+TransipProvider support root NS record management.   
+To stay backwards compatible root NS management is an opt-in setting
+
+**Caveats:** 
+
+  *1*: Transip currently only supports FQDN values for root nameservers.
+
+  *2*: Transip has no TTL for nameservers, so a default value of 3600 is implied. 
+So please use the same TTL in your source(s).   
+If the provider detects no changes in root NS values but TTL, 
+it will skip updating the root nameservers
+
 
 #### Dynamic
 
