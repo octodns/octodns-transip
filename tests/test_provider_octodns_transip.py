@@ -8,11 +8,13 @@ from unittest import TestCase
 from unittest.mock import Mock, patch
 
 from octodns.provider.yaml import YamlProvider
+from octodns.record import Record
 from octodns.zone import Zone
 
 from octodns_transip import (
     DNSEntry,
     Nameserver,
+    SupportsException,
     TransipConfigException,
     TransipException,
     TransIPHTTPError,
@@ -234,7 +236,7 @@ class TestTransipProvider(TestCase):
         plan = provider.plan(make_expected())
 
         self.assertIsNotNone(plan)
-        self.assertEqual(22, plan.change_counts["Create"])
+        self.assertEqual(21, plan.change_counts["Create"])
         self.assertEqual(0, plan.change_counts["Update"])
         self.assertEqual(0, plan.change_counts["Delete"])
 
@@ -508,9 +510,11 @@ class TestTransipProvider(TestCase):
             for e in domain_mock.nameservers.replace.mock_calls[0][1][0]
         ]
         expected_nameservers = [
-            {'hostname': '', 'ipv4': '2.2.2.2', 'ipv6': ''},
-            {'hostname': '', 'ipv4': '3.3.3.3', 'ipv6': ''},
+            {'hostname': 'ns0.transip.net', 'ipv4': '', 'ipv6': ''},
+            {'hostname': 'ns1.transip.nl', 'ipv4': '', 'ipv6': ''},
+            {'hostname': 'ns2.transip.eu', 'ipv4': '', 'ipv6': ''},
         ]
+
         self.assertEqual(
             sorted(
                 expected_nameservers, key=itemgetter("hostname", "ipv4", "ipv6")
@@ -557,8 +561,9 @@ class TestTransipProvider(TestCase):
             ]
         ]
         expected_nameservers = [
-            {'hostname': '', 'ipv4': '2.2.2.2', 'ipv6': ''},
-            {'hostname': '', 'ipv4': '3.3.3.3', 'ipv6': ''},
+            {'hostname': 'ns0.transip.net', 'ipv4': '', 'ipv6': ''},
+            {'hostname': 'ns1.transip.nl', 'ipv4': '', 'ipv6': ''},
+            {'hostname': 'ns2.transip.eu', 'ipv4': '', 'ipv6': ''},
         ]
         self.assertEqual(
             sorted(
@@ -568,6 +573,59 @@ class TestTransipProvider(TestCase):
                 seen_nameservers, key=itemgetter("hostname", "ipv4", "ipv6")
             ),
         )
+
+    @patch("octodns_transip.TransIP")
+    def test_plan_ipv4_nameservers(self, client_mock):
+        provider = TransipProvider(
+            "test",
+            "unittest",
+            self.bogus_key,
+            enable_root_ns=True,
+            strict_supports=False,
+        )
+
+        expected = make_expected()
+
+        record = Record.new(
+            expected,
+            "",
+            {
+                'type': "NS",
+                'ttl': 3600,
+                'values': ['2601:644:500:e210:62f8:1dff:feb8:947a.'],
+            },
+            lenient=True,
+        )
+
+        expected.add_record(record, replace=True)
+
+        with self.assertRaises(SupportsException):
+            plan = provider.plan(expected)
+            self.assertIsNotNone(plan)
+
+    @patch("octodns_transip.TransIP")
+    def test_plan_ipv6_nameservers(self, client_mock):
+        provider = TransipProvider(
+            "test",
+            "unittest",
+            self.bogus_key,
+            enable_root_ns=True,
+            strict_supports=False,
+        )
+
+        expected = make_expected()
+
+        record = Record.new(
+            expected,
+            "",
+            {'type': "NS", 'ttl': 3600, 'values': ['2.2.2.2.', '3.3.3.3.']},
+        )
+
+        expected.add_record(record, replace=True)
+
+        with self.assertRaises(SupportsException):
+            plan = provider.plan(expected)
+            self.assertIsNotNone(plan)
 
     @patch("octodns_transip.TransIP")
     def test_apply_nameservers_ttl_only(self, client_mock):

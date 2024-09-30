@@ -11,9 +11,9 @@ from transip.exceptions import TransIPHTTPError
 from transip.v6.objects import DnsEntry, Nameserver
 from urllib3.util.ssl_ import is_ipaddress
 
-from octodns.provider import ProviderException
+from octodns.provider import ProviderException, SupportsException
 from octodns.provider.base import BaseProvider
-from octodns.record import Record, Update
+from octodns.record import Record
 
 # TODO: remove __VERSION__ with the next major version release
 __version__ = __VERSION__ = '0.0.1'
@@ -177,9 +177,28 @@ class TransipProvider(BaseProvider):
 
     def _process_desired_zone(self, desired):
 
-        self.log.info("process_desired")
+        for record in desired.records:
+            if record._type == 'NS' and record.name == '':
 
-        return desired
+                # Check values for FQDN, IP's are not supported
+                values = record.values if record.values else [record.value]
+
+                for value in values:
+
+                    if is_ipaddress(value.strip(".")):
+                        print(f'Blaat {value}')
+                        msg = f'ip address not supported for root NS value for {record.fqdn}'
+                        raise SupportsException(f'{self.id}: {msg}')
+
+                # Check if TTL differs
+                if record.ttl != self.ROOT_NS_TTL:
+                    record.ttl = self.ROOT_NS_TTL
+                    msg = f'TTL value not supported for root NS values for {record.fqdn}'
+                    fallback = 'modified to fixed value'
+                    self.supports_warn_or_except(msg, fallback)
+                    desired.add_record(record, replace=True)
+
+        return super()._process_desired_zone(desired)
 
     def _apply(self, plan):
         desired = plan.desired
@@ -203,21 +222,6 @@ class TransipProvider(BaseProvider):
                     if record.get('values')
                     else [record.get('value')]
                 )
-
-                # Root nameservers has no TTL within Transip, so skip apply if values are the same
-                # TODO: Find a way to exclude TTL-only change from the plan
-                if change.__class__ == Update:
-                    existing = change.data['existing']
-                    existing_values = (
-                        existing.get('values')
-                        if existing.get('values')
-                        else [existing.get('value')]
-                    )
-                    if existing_values == values:
-                        self.log.debug(
-                            "No change in root nameserver values, skipping"
-                        )
-                        continue
 
                 nameservers = []
                 for value in values:

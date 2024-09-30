@@ -32,8 +32,9 @@
       fingerprint_type: 1
   - type: NS
     values:
-    - 2.2.2.2.
-    - 3.3.3.3.
+      - ns0.transip.net.
+      - ns1.transip.nl.
+      - ns2.transip.eu.
   - type: CAA
     values:
     - flags: 0

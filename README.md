@@ -61,14 +61,9 @@ TransipProvider A, AAAA, ALIAS, CAA, CNAME, DS, MX, NAPTR, NS, SPF, SRV, SSHFP, 
 TransipProvider support root NS record management.   
 To stay backwards compatible root NS management is an opt-in setting
 
-**Caveats:** 
-
-  *1*: Transip currently only supports FQDN values for root nameservers.
-
-  *2*: Transip has no TTL for nameservers, so a default value of 3600 is implied. 
-So please use the same TTL in your source(s).   
-If the provider detects no changes in root NS values but TTL, 
-it will skip updating the root nameservers
+**notes:** 
+  - Transip currently only supports FQDN values for root nameservers.
+  - Transip has no TTL for root nameservers, so the TTL value is ignored 
 
 
 #### Dynamic
