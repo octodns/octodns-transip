@@ -52,7 +52,15 @@ providers:
 
 #### Records
 
-TransipProvider A, AAAA, CAA, CNAME, MX, NS, SRV, SPF, SSHFP, and TXT
+TransipProvider A, AAAA, ALIAS, CAA, CNAME, DS, MX, NAPTR, NS, SPF, SRV, SSHFP, TLSA, TXT
+
+#### Root NS records
+
+TransipProvider support root NS record management.   
+**notes:** 
+  - Transip currently only supports FQDN values for root nameservers.
+  - Transip has no TTL for root nameservers, so the TTL value from the source is ignored 
+
 
 #### Dynamic
 
