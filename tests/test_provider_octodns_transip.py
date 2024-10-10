@@ -20,6 +20,10 @@ from octodns_transip import (
     TransIPHTTPError,
     TransipNewZoneException,
     TransipProvider,
+    TransipRetrieveNameserverException,
+    TransipRetrieveRecordsException,
+    TransipSaveNameserverException,
+    TransipSaveRecordsException,
     _attr_for_nameserver,
     _entries_for,
     _parse_to_fqdn,
@@ -127,6 +131,22 @@ def make_failing_mock(response_code):
     return mock
 
 
+def make_failing_mock_records(response_code):
+    mock = make_mock_empty()
+    mock.return_value.domains.get.return_value.dns.list.side_effect = [
+        TransIPHTTPError(str(response_code), response_code)
+    ]
+    return mock
+
+
+def make_failing_mock_nameservers(response_code):
+    mock = make_mock_empty()
+    mock.return_value.domains.get.return_value.nameservers.list.side_effect = [
+        TransIPHTTPError(str(response_code), response_code)
+    ]
+    return mock
+
+
 class TestTransipProvider(TestCase):
     bogus_key = "-----BEGIN RSA PRIVATE KEY-----Z-----END RSA PRIVATE KEY-----"
 
@@ -143,9 +163,7 @@ class TestTransipProvider(TestCase):
         # Those should work
         TransipProvider("test", "unittest", key=self.bogus_key)
         TransipProvider("test", "unittest", key_file="/fake/path")
-        TransipProvider(
-            "test", "unittest", key_file="/fake/path", enable_root_ns=True
-        )
+        TransipProvider("test", "unittest", key_file="/fake/path")
 
     @patch("octodns_transip.TransIP", make_failing_mock(401))
     def test_populate_unauthenticated(self):
@@ -164,6 +182,28 @@ class TestTransipProvider(TestCase):
         zone = Zone("notfound.unit.tests.", [])
         with self.assertRaises(TransipNewZoneException):
             provider.populate(zone, True)
+
+    @patch("octodns_transip.TransIP", make_failing_mock_records(404))
+    def test_populate_records_get_error(self):
+        # Happy Plan - Error while retreiving nameservers
+        # Will trigger an exception if provider is used as a target for a
+        # non-existing zone
+
+        provider = TransipProvider("test", "unittest", self.bogus_key)
+        zone = Zone("unit.tests.", [])
+        with self.assertRaises(TransipRetrieveRecordsException):
+            provider.populate(zone, False)
+
+    @patch("octodns_transip.TransIP", make_failing_mock_nameservers(404))
+    def test_populate_nameserver_get_error(self):
+        # Happy Plan - Error while retreiving nameservers
+        # Will trigger an exception if provider is used as a target for a
+        # non-existing zone
+
+        provider = TransipProvider("test", "unittest", self.bogus_key)
+        zone = Zone("unit.tests.", [])
+        with self.assertRaises(TransipRetrieveNameserverException):
+            provider.populate(zone, False)
 
     @patch("octodns_transip.TransIP", make_mock_empty())
     def test_populate_new_zone_not_target(self):
@@ -194,9 +234,7 @@ class TestTransipProvider(TestCase):
             root_ns_entries
         )
 
-        provider = TransipProvider(
-            "test", "unittest", self.bogus_key, enable_root_ns=True
-        )
+        provider = TransipProvider("test", "unittest", self.bogus_key)
         zone = Zone("unit.tests.", [])
 
         exists = provider.populate(zone, False)
@@ -226,29 +264,44 @@ class TestTransipProvider(TestCase):
         exists = provider.populate(zone, True)
         self.assertTrue(exists, "populate should return True")
 
+    @patch("octodns_transip.TransIP")
+    def test_populate_nameservers(self, mock_client):
+        # Happy Plan - Zone loads
+
+        mock_client.return_value.domains.get.return_value.nameservers.list.return_value = (
+            make_mock_nameservers()
+        )
+
+        provider = TransipProvider("test", "unittest", self.bogus_key)
+        zone = Zone("unit.tests.", [])
+        success = provider.populate(zone, False, lenient=True)
+        self.assertTrue(success, "populate should return True")
+
+        self.assertEqual(
+            1, len(zone.records), "zone.records should have 1 record"
+        )
+
+        firstRecord = zone.records.pop()
+
+        self.assertEqual(firstRecord._type, "NS", "Record type should be NS")
+        self.assertEqual(firstRecord.ttl, 3600, "TTL should be 3600")
+        self.assertEqual(
+            firstRecord.values,
+            [
+                '2.2.2.2.',
+                '2601:644:500:e210:62f8:1dff:feb8:947a.',
+                'ns0.transip.net.',
+                'ns1.transip.nl.',
+                'ns2.transip.eu.',
+            ],
+            "Values should match list",
+        )
+
     @patch("octodns_transip.TransIP", make_mock_empty())
     def test_plan(self):
         # Test happy plan, only create
         provider = TransipProvider(
             "test", "unittest", self.bogus_key, strict_supports=False
-        )
-
-        plan = provider.plan(make_expected())
-
-        self.assertIsNotNone(plan)
-        self.assertEqual(21, plan.change_counts["Create"])
-        self.assertEqual(0, plan.change_counts["Update"])
-        self.assertEqual(0, plan.change_counts["Delete"])
-
-    @patch("octodns_transip.TransIP", make_mock_empty())
-    def test_plan_with_root_ns(self):
-        # Test happy plan, only create
-        provider = TransipProvider(
-            "test",
-            "unittest",
-            self.bogus_key,
-            enable_root_ns=True,
-            strict_supports=False,
         )
 
         plan = provider.plan(make_expected())
@@ -261,25 +314,17 @@ class TestTransipProvider(TestCase):
     @patch("octodns_transip.TransIP")
     def test_apply(self, client_mock):
         # Test happy flow. Create all supported records
-        domain_mock = Mock()
-        client_mock.return_value.domains.get.return_value = domain_mock
-        domain_mock.dns.list.return_value = []
-        domain_mock.nameservers.list.return_value = make_mock_nameservers()
 
         provider = TransipProvider(
-            "test",
-            "unittest",
-            self.bogus_key,
-            enable_root_ns=True,
-            strict_supports=False,
+            "test", "unittest", self.bogus_key, strict_supports=False
         )
 
         plan = provider.plan(make_expected())
         self.assertIsNotNone(plan)
         provider.apply(plan)
 
-        domain_mock.dns.replace.assert_called_once()
-        domain_mock.nameservers.replace.assert_called_once()
+        client_mock.return_value.domains.get.return_value.dns.replace.assert_called_once()
+        client_mock.return_value.domains.get.return_value.nameservers.replace.assert_called_once()
 
         # These are the supported ones from tests/config/unit.test.yaml
         expected_entries = [
@@ -498,58 +543,19 @@ class TestTransipProvider(TestCase):
         # Unpack from the transip library magic structure...
         seen_entries = [
             e.__dict__["_attrs"]
-            for e in domain_mock.dns.replace.mock_calls[0][1][0]
-        ]
-        self.assertEqual(
-            sorted(expected_entries, key=itemgetter("name", "type", "expire")),
-            sorted(seen_entries, key=itemgetter("name", "type", "expire")),
-        )
-
-        seen_nameservers = [
-            e.__dict__["_attrs"]
-            for e in domain_mock.nameservers.replace.mock_calls[0][1][0]
-        ]
-        expected_nameservers = [
-            {'hostname': 'ns0.transip.net', 'ipv4': '', 'ipv6': ''},
-            {'hostname': 'ns1.transip.nl', 'ipv4': '', 'ipv6': ''},
-            {'hostname': 'ns2.transip.eu', 'ipv4': '', 'ipv6': ''},
-        ]
-
-        self.assertEqual(
-            sorted(
-                expected_nameservers, key=itemgetter("hostname", "ipv4", "ipv6")
-            ),
-            sorted(
-                seen_nameservers, key=itemgetter("hostname", "ipv4", "ipv6")
-            ),
-        )
-
-    @patch("octodns_transip.TransIP")
-    def test_apply_nameservers(self, client_mock):
-        provider = TransipProvider(
-            "test",
-            "unittest",
-            self.bogus_key,
-            enable_root_ns=True,
-            strict_supports=False,
-        )
-
-        plan = provider.plan(make_expected())
-        self.assertIsNotNone(plan)
-        provider.apply(plan)
-
-        client_mock.return_value.domains.get.return_value.dns.replace.assert_called_once()
-        client_mock.return_value.domains.get.return_value.nameservers.replace.assert_called_once()
-
-        print(
-            client_mock.return_value.domains.get.return_value.nameservers.replace.mock_calls[
+            for e in client_mock.return_value.domains.get.return_value.dns.replace.mock_calls[
                 0
             ][
                 1
             ][
                 0
             ]
+        ]
+        self.assertEqual(
+            sorted(expected_entries, key=itemgetter("name", "type", "expire")),
+            sorted(seen_entries, key=itemgetter("name", "type", "expire")),
         )
+
         seen_nameservers = [
             e.__dict__["_attrs"]
             for e in client_mock.return_value.domains.get.return_value.nameservers.replace.mock_calls[
@@ -577,11 +583,7 @@ class TestTransipProvider(TestCase):
     @patch("octodns_transip.TransIP")
     def test_plan_ipv4_nameservers(self, client_mock):
         provider = TransipProvider(
-            "test",
-            "unittest",
-            self.bogus_key,
-            enable_root_ns=True,
-            strict_supports=False,
+            "test", "unittest", self.bogus_key, strict_supports=False
         )
 
         expected = make_expected()
@@ -606,11 +608,7 @@ class TestTransipProvider(TestCase):
     @patch("octodns_transip.TransIP")
     def test_plan_ipv6_nameservers(self, client_mock):
         provider = TransipProvider(
-            "test",
-            "unittest",
-            self.bogus_key,
-            enable_root_ns=True,
-            strict_supports=False,
+            "test", "unittest", self.bogus_key, strict_supports=False
         )
 
         expected = make_expected()
@@ -637,11 +635,7 @@ class TestTransipProvider(TestCase):
         )
 
         provider = TransipProvider(
-            "test",
-            "unittest",
-            self.bogus_key,
-            enable_root_ns=True,
-            strict_supports=False,
+            "test", "unittest", self.bogus_key, strict_supports=False
         )
         provider.ROOT_NS_TTL = 0  # Enforce a diff from unit-test root NS ttl
 
@@ -660,17 +654,13 @@ class TestTransipProvider(TestCase):
         ]
 
         provider = TransipProvider(
-            "test",
-            "unittest",
-            self.bogus_key,
-            enable_root_ns=True,
-            strict_supports=False,
+            "test", "unittest", self.bogus_key, strict_supports=False
         )
         provider.ROOT_NS_TTL = 0
 
         plan = provider.plan(make_expected())
         self.assertIsNotNone(plan)
-        with self.assertRaises(TransipException):
+        with self.assertRaises(TransipSaveNameserverException):
             provider.apply(plan)
 
     @patch("octodns_transip.TransIP")
@@ -679,6 +669,7 @@ class TestTransipProvider(TestCase):
         domain_mock = Mock()
         client_mock.return_value.domains.get.return_value = domain_mock
         domain_mock.dns.list.return_value = []
+        domain_mock.nameservers.list.return_value = []
         provider = TransipProvider(
             "test", "unittest", self.bogus_key, strict_supports=False
         )
@@ -723,6 +714,7 @@ class TestTransipProvider(TestCase):
         # but just in case.
         domain_mock = Mock()
         domain_mock.dns.list.return_value = []
+        domain_mock.nameservers.list.return_value = []
         client_mock.return_value.domains.get.side_effect = [
             domain_mock,
             TransIPHTTPError("Not Found", 404),
@@ -741,6 +733,7 @@ class TestTransipProvider(TestCase):
         # Test unhappy flow. Trigger a unrecoverable error while saving
         domain_mock = Mock()
         domain_mock.dns.list.return_value = []
+        domain_mock.nameservers.list.return_value = []
         domain_mock.dns.replace.side_effect = [
             TransIPHTTPError("Not Found", 500)
         ]
@@ -751,7 +744,26 @@ class TestTransipProvider(TestCase):
 
         plan = provider.plan(make_expected())
 
-        with self.assertRaises(TransipException):
+        with self.assertRaises(TransipSaveRecordsException):
+            provider.apply(plan)
+
+    @patch("octodns_transip.TransIP")
+    def test_apply_failure_on_error_nameserver(self, client_mock):
+        # Test unhappy flow. Trigger a unrecoverable error while saving
+        domain_mock = Mock()
+        domain_mock.dns.list.return_value = []
+        domain_mock.nameservers.list.return_value = []
+        domain_mock.nameservers.replace.side_effect = [
+            TransIPHTTPError("Not Found", 500)
+        ]
+        client_mock.return_value.domains.get.return_value = domain_mock
+        provider = TransipProvider(
+            "test", "unittest", self.bogus_key, strict_supports=False
+        )
+
+        plan = provider.plan(make_expected())
+
+        with self.assertRaises(TransipSaveNameserverException):
             provider.apply(plan)
 
 

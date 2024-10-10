@@ -33,10 +33,26 @@ class TransipNewZoneException(TransipException):
     pass
 
 
+class TransipRetrieveRecordsException(ProviderException):
+    pass
+
+
+class TransipRetrieveNameserverException(ProviderException):
+    pass
+
+
+class TransipSaveRecordsException(ProviderException):
+    pass
+
+
+class TransipSaveNameserverException(ProviderException):
+    pass
+
+
 class TransipProvider(BaseProvider):
     SUPPORTS_GEO = False
     SUPPORTS_DYNAMIC = False
-    SUPPORTS_ROOT_NS = False
+    SUPPORTS_ROOT_NS = True
     SUPPORTS = set(
         (
             'A',
@@ -60,17 +76,7 @@ class TransipProvider(BaseProvider):
     ROOT_RECORD = '@'
     ROOT_NS_TTL = 3600  # Bogus value
 
-    def __init__(
-        self,
-        id,
-        account,
-        key=None,
-        key_file=None,
-        enable_root_ns=False,
-        *args,
-        **kwargs,
-    ):
-        self.SUPPORTS_ROOT_NS = enable_root_ns
+    def __init__(self, id, account, key=None, key_file=None, *args, **kwargs):
         self.log = getLogger('TransipProvider[{}]'.format(id))
         self.log.debug('__init__: id=%s, account=%s, token=***', id, account)
         super().__init__(id, *args, **kwargs)
@@ -96,13 +102,8 @@ class TransipProvider(BaseProvider):
         )
 
         before = len(zone.records)
-
         try:
             domain = self._client.domains.get(zone.name.strip('.'))
-            records = domain.dns.list()
-            nameservers = (
-                domain.nameservers.list() if self.SUPPORTS_ROOT_NS else []
-            )
 
         except TransIPHTTPError as e:
             if e.response_code == 404 and target is False:
@@ -125,10 +126,40 @@ class TransipProvider(BaseProvider):
                     )
                 )
 
-        self.log.debug(
-            'populate: found %s records for zone %s', len(records), zone.name
-        )
+        # Retrieve dns records from transip api
+        try:
+            records = domain.dns.list()
+            self.log.debug(
+                'populate: found %s records for zone %s',
+                len(records),
+                zone.name,
+            )
+        except TransIPHTTPError as e:
+            self.log.error('populate: (%s) %s ', e.response_code, e.message)
+            raise TransipRetrieveRecordsException(
+                (
+                    'populate: ({}) failed to get ' + 'dns records for zone: {}'
+                ).format(e.response_code, zone.name)
+            )
 
+        # Retrieve nameservers from transip api
+        try:
+            nameservers = domain.nameservers.list()
+            self.log.debug(
+                'populate: found %s root nameservers for zone %s',
+                len(nameservers),
+                zone.name,
+            )
+        except TransIPHTTPError as e:
+            self.log.error('populate: (%s) %s ', e.response_code, e.message)
+            raise TransipRetrieveNameserverException(
+                (
+                    'populate: ({}) failed to get '
+                    + 'root nameservers for zone: {}'
+                ).format(e.response_code, zone.name)
+            )
+
+        # If nameservers are found, add them as ROOT NS records
         if nameservers:
             values = []
             for ns in nameservers:
@@ -147,7 +178,9 @@ class TransipProvider(BaseProvider):
                 lenient=lenient,
             )
             zone.add_record(record, lenient=lenient)
+            zone.root_ns
 
+        # If records are found, add them to the zone
         if records:
             values = defaultdict(lambda: defaultdict(list))
             for record in records:
@@ -186,7 +219,6 @@ class TransipProvider(BaseProvider):
                 for value in values:
 
                     if is_ipaddress(value.strip(".")):
-                        print(f'Blaat {value}')
                         msg = f'ip address not supported for root NS value for {record.fqdn}'
                         raise SupportsException(f'{self.id}: {msg}')
 
@@ -194,8 +226,11 @@ class TransipProvider(BaseProvider):
                 if record.ttl != self.ROOT_NS_TTL:
                     record.ttl = self.ROOT_NS_TTL
                     msg = f'TTL value not supported for root NS values for {record.fqdn}'
-                    fallback = 'modified to fixed value'
-                    self.supports_warn_or_except(msg, fallback)
+                    fallback = f'modified to fixed value ({self.ROOT_NS_TTL})'
+                    # Not using self.supports_warn_or_except(msg, fallback)
+                    # because strict_mode shouldn't be disabled just for an ignored value
+                    # so always return a warning even in strict_mode
+                    self.log.warning('%s; %s', msg, fallback)
                     desired.add_record(record, replace=True)
 
         return super()._process_desired_zone(desired)
@@ -238,7 +273,7 @@ class TransipProvider(BaseProvider):
                             e
                         )
                     )
-                    raise TransipException(
+                    raise TransipSaveNameserverException(
                         'Unhandled error: ({}) {}'.format(
                             e.response_code, e.message
                         )
@@ -265,7 +300,7 @@ class TransipProvider(BaseProvider):
             self.log.warning(
                 '_apply: Set DNS returned one or more errors: {}'.format(e)
             )
-            raise TransipException(
+            raise TransipSaveRecordsException(
                 'Unhandled error: ({}) {}'.format(e.response_code, e.message)
             )
 
