@@ -214,7 +214,7 @@ class TransipProvider(BaseProvider):
             if record._type == 'NS' and record.name == '':
 
                 # Check values for FQDN, IP's are not supported
-                values = record.values if record.values else [record.value]
+                values = record.values
 
                 for value in values:
 
@@ -252,11 +252,7 @@ class TransipProvider(BaseProvider):
             record = change.data['new']
 
             if change.data['name'] == '' and change.data['record_type'] == 'NS':
-                values = (
-                    record.get('values')
-                    if record.get('values')
-                    else [record.get('value')]
-                )
+                values = record.values
 
                 nameservers = []
                 for value in values:
