@@ -74,7 +74,11 @@ class TransipProvider(BaseProvider):
     MIN_TTL = 120
     TIMEOUT = 15
     ROOT_RECORD = '@'
-    ROOT_NS_TTL = 3600  # Bogus value
+
+    # TransIP root nameservers don't have TTL configurable.
+    # This value is enforced on root NS records to prevent TTL-only changes
+    # See root NS handling in _process_desired_zone for more information
+    ROOT_NS_TTL = 3600
 
     def __init__(self, id, account, key=None, key_file=None, *args, **kwargs):
         self.log = getLogger('TransipProvider[{}]'.format(id))
@@ -214,24 +218,25 @@ class TransipProvider(BaseProvider):
             if record._type == 'NS' and record.name == '':
 
                 # Check values for FQDN, IP's are not supported
-                values = record.values if record.values else [record.value]
+                values = record.values
 
                 for value in values:
-
                     if is_ipaddress(value.strip(".")):
                         msg = f'ip address not supported for root NS value for {record.fqdn}'
                         raise SupportsException(f'{self.id}: {msg}')
 
-                # Check if TTL differs
+                # TransIP root nameservers don't have TTL configurable.
+                # Check if TTL differs and enforce our fixed value if needed.
                 if record.ttl != self.ROOT_NS_TTL:
-                    record.ttl = self.ROOT_NS_TTL
+                    updated_record = record.copy()
+                    updated_record.ttl = self.ROOT_NS_TTL
                     msg = f'TTL value not supported for root NS values for {record.fqdn}'
                     fallback = f'modified to fixed value ({self.ROOT_NS_TTL})'
                     # Not using self.supports_warn_or_except(msg, fallback)
                     # because strict_mode shouldn't be disabled just for an ignored value
                     # so always return a warning even in strict_mode
                     self.log.warning('%s; %s', msg, fallback)
-                    desired.add_record(record, replace=True)
+                    desired.add_record(updated_record, replace=True)
 
         return super()._process_desired_zone(desired)
 
