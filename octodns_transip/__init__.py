@@ -254,14 +254,10 @@ class TransipProvider(BaseProvider):
             )
 
         for change in changes:
-            record = change.data['new']
+            record = change.new
 
-            if change.data['name'] == '' and change.data['record_type'] == 'NS':
-                values = (
-                    record.get('values')
-                    if record.get('values')
-                    else [record.get('value')]
-                )
+            if record.name == '' and record._type == 'NS':
+                values = record.values
 
                 nameservers = []
                 for value in values:
