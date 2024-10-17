@@ -1,4 +1,4 @@
-## UNRELEASED
+## v0.0.2 - 2024-10-17 - More the merrier
 
 #### Nothworthy Changes
 
