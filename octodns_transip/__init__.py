@@ -254,7 +254,7 @@ class TransipProvider(BaseProvider):
             )
 
         for change in changes:
-            record = change.new
+            record = change.record
 
             if record.name == '' and record._type == 'NS':
                 values = record.values
