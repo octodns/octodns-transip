@@ -256,7 +256,7 @@ class TransipProvider(BaseProvider):
         for change in changes:
             record = change.record
 
-            if record and record.name == '' and record._type == 'NS':
+            if record.name == '' and record._type == 'NS':
                 values = record.values
 
                 nameservers = []
