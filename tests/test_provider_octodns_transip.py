@@ -101,6 +101,21 @@ def make_mock_empty():
     return mock
 
 
+def make_domainmock_existing():
+    mock = Mock()
+
+    api_entries = []
+    api_entries.append(DNSEntry("@", 300, "A", "1.2.3.4"))
+    api_entries.append(DNSEntry("@", 300, "A", "1.2.3.5"))
+    api_entries.append(DNSEntry("delete-me", 3600, "A", "1.1.1.1"))
+    api_entries.append(DNSEntry("delete-me-too", 3600, "CNAME", "unit.tests."))
+
+    mock.dns.list.return_value = api_entries
+    mock.nameservers.list.return_value = make_mock_nameservers()
+
+    return mock
+
+
 def make_mock_nameservers():
     nameservers = []
     for value in [
@@ -662,6 +677,31 @@ class TestTransipProvider(TestCase):
         self.assertIsNotNone(plan)
         with self.assertRaises(TransipSaveNameserverException):
             provider.apply(plan)
+
+    @patch("octodns_transip.TransIP")
+    def test_apply_deletions(self, client_mock):
+        domain_mock = make_domainmock_existing()
+        client_mock.return_value.domains.get.return_value = domain_mock
+        domain_mock.nameservers.list.return_value = []
+        provider = TransipProvider(
+            "test", "unittest", self.bogus_key, strict_supports=False
+        )
+
+        plan = provider.plan(make_expected())
+
+        self.assertIsNotNone(plan)
+        self.assertEqual(21, plan.change_counts["Create"])
+        self.assertEqual(0, plan.change_counts["Update"])
+        self.assertEqual(2, plan.change_counts["Delete"])
+
+        provider.apply(plan)
+
+        for e in domain_mock.dns.replace.mock_calls[0][1][0]:
+            self.assertNotRegex(
+                e.name,
+                r'^delete-me.*$',
+                "This record should be deleted, and be seen within the api call",
+            )
 
     @patch("octodns_transip.TransIP")
     def test_apply_unsupported(self, client_mock):
