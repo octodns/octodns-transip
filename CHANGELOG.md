@@ -1,3 +1,7 @@
+## v0.0.3 - 2024-11-29 - Delete w/o fail
+
+* Deletion of records results in a stack trace in version 0.0.2.
+
 ## v0.0.2 - 2024-10-17 - More the merrier
 
 #### Nothworthy Changes
