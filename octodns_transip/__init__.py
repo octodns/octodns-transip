@@ -61,7 +61,6 @@ class TransipProvider(BaseProvider):
             'MX',
             'NS',
             'SRV',
-            'SPF',
             'TXT',
             'SSHFP',
             'CAA',
