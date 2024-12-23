@@ -2,6 +2,10 @@
 
 ### Notedworthy Changes:
 
+* `SPF` record support removed, records should be migrated to `TXT` before
+  upgrading.
+* Requires octoDNS >= 1.5.0
+
 
 ## v0.0.3 - 2024-11-29 - Delete w/o fail
 
