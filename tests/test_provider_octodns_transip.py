@@ -178,7 +178,9 @@ class TestTransipProvider(TestCase):
         # Those should work
         TransipProvider("test", "unittest", key=self.bogus_key)
         TransipProvider("test", "unittest", key_file="/fake/path")
-        TransipProvider("test", "unittest", key_file="/fake/path")
+        TransipProvider(
+            "test", "unittest", key_file="/fake/path", global_key=True
+        )
 
     @patch("octodns_transip.TransIP", make_failing_mock(401))
     def test_populate_unauthenticated(self):
