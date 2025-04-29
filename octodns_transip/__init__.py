@@ -16,7 +16,7 @@ from octodns.provider.base import BaseProvider
 from octodns.record import Record
 
 # TODO: remove __VERSION__ with the next major version release
-__version__ = __VERSION__ = '0.0.3'
+__version__ = __VERSION__ = '0.0.4'
 
 DNSEntry = namedtuple('DNSEntry', ('name', 'expire', 'type', 'content'))
 
@@ -79,15 +79,28 @@ class TransipProvider(BaseProvider):
     # See root NS handling in _process_desired_zone for more information
     ROOT_NS_TTL = 3600
 
-    def __init__(self, id, account, key=None, key_file=None, *args, **kwargs):
+    def __init__(
+        self,
+        id,
+        account,
+        key=None,
+        key_file=None,
+        global_key=False,
+        *args,
+        **kwargs,
+    ):
         self.log = getLogger('TransipProvider[{}]'.format(id))
         self.log.debug('__init__: id=%s, account=%s, token=***', id, account)
         super().__init__(id, *args, **kwargs)
 
         if key_file is not None:
-            self._client = TransIP(login=account, private_key_file=key_file)
+            self._client = TransIP(
+                login=account, global_key=global_key, private_key_file=key_file
+            )
         elif key is not None:
-            self._client = TransIP(login=account, private_key=key)
+            self._client = TransIP(
+                login=account, global_key=global_key, private_key=key
+            )
         else:
             raise TransipConfigException(
                 'Missing `key` or `key_file` parameter in config'

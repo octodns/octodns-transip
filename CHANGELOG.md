@@ -6,6 +6,9 @@
   upgrading.
 * Requires octoDNS >= 1.5.0
 
+## v0.0.4 - 2025-04-04 - Key changes
+
+* Add global_key provider param to support disabling IP whitelisting
 
 ## v0.0.3 - 2024-11-29 - Delete w/o fail
 
