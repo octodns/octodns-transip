@@ -1,3 +1,11 @@
+# v1.0.0 - 2024-??-?? - ???
+
+### Notedworthy Changes:
+
+* `SPF` record support removed, records should be migrated to `TXT` before
+  upgrading.
+* Requires octoDNS >= 1.5.0
+
 ## v0.0.4 - 2025-04-04 - Key changes
 
 * Add global_key provider param to support disabling IP whitelisting

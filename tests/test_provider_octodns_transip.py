@@ -324,7 +324,7 @@ class TestTransipProvider(TestCase):
         plan = provider.plan(make_expected())
 
         self.assertIsNotNone(plan)
-        self.assertEqual(22, plan.change_counts["Create"])
+        self.assertEqual(21, plan.change_counts["Create"])
         self.assertEqual(0, plan.change_counts["Update"])
         self.assertEqual(0, plan.change_counts["Delete"])
 
@@ -386,12 +386,6 @@ class TestTransipProvider(TestCase):
                 "expire": 600,
                 "type": "NAPTR",
                 "content": "100 100 U SIP+D2U !^.*$!sip:info@bar.example.com! .",
-            },
-            {
-                "name": "spf",
-                "expire": 600,
-                "type": "SPF",
-                "content": "v=spf1 ip4:192.168.0.1/16-all",
             },
             {
                 "name": "_srv._tcp",
@@ -692,7 +686,7 @@ class TestTransipProvider(TestCase):
         plan = provider.plan(make_expected())
 
         self.assertIsNotNone(plan)
-        self.assertEqual(21, plan.change_counts["Create"])
+        self.assertEqual(20, plan.change_counts["Create"])
         self.assertEqual(0, plan.change_counts["Update"])
         self.assertEqual(2, plan.change_counts["Delete"])
 
