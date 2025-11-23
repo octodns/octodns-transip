@@ -1,3 +1,9 @@
+## 1.0.1 - 2025-11-23
+
+Patch:
+* Fix CAA record quoting - [#63](https://github.com/octodns/octodns-transip/pull/63)
+* Use new [changelet](https://github.com/octodns/changelet) tooling - [#55](https://github.com/octodns/octodns-transip/pull/55)
+
 # v1.0.0 - 2025-04-29 - Long overdue 1.0
 
 ### Notedworthy Changes:
