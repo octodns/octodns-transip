@@ -352,6 +352,7 @@ def _data_for(type_, records, current_zone):
 
     def format_caa(record):
         flags, tag, value = record.content.split(' ', 2)
+        value = value[1:-1]
         return {'flags': flags, 'tag': tag, 'value': value}
 
     def format_txt(record):
@@ -440,7 +441,7 @@ def _entries_for(name, record):
         return f'{v.algorithm} {v.fingerprint_type} {v.fingerprint}'
 
     def entry_caa(v):
-        return f'{v.flags} {v.tag} {v.value}'
+        return f'{v.flags} {v.tag} "{v.value}"'
 
     def entry_txt(v):
         return v.replace('\\;', ';')

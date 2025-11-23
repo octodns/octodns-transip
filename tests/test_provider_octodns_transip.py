@@ -361,7 +361,19 @@ class TestTransipProvider(TestCase):
                 "name": "@",
                 "expire": 3600,
                 "type": "CAA",
-                "content": "0 issue ca.unit.tests",
+                "content": '0 iodef "mailto:example@example.com"',
+            },
+            {
+                "name": "@",
+                "expire": 3600,
+                "type": "CAA",
+                "content": '0 issue "ca.unit.tests"',
+            },
+            {
+                "name": "@",
+                "expire": 3600,
+                "type": "CAA",
+                "content": '128 issuewild "ca.unit.tests; validationmethods=http-01"',
             },
             {
                 "name": "sub",

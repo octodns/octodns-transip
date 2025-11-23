@@ -25,8 +25,14 @@
   - type: CAA
     values:
     - flags: 0
+      tag: iodef
+      value: mailto:example@example.com
+    - flags: 0
       tag: issue
       value: ca.unit.tests
+    - flags: 128
+      tag: issuewild
+      value: ca.unit.tests; validationmethods=http-01
 _imap._tcp:
   ttl: 600
   type: SRV
