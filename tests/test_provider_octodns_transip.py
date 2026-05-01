@@ -451,13 +451,13 @@ class TestTransipProvider(TestCase):
                 "name": "tlsa",
                 "expire": 3600,
                 "type": "TLSA",
-                "content": "1 1 1 ABABABABABABABABAB",
+                "content": "1 1 1 ababababababababab",
             },
             {
                 "name": "tlsa",
                 "expire": 3600,
                 "type": "TLSA",
-                "content": "2 0 2 ABABABABABABABABAC",
+                "content": "2 0 2 ababababababababac",
             },
             {
                 "name": "txt",

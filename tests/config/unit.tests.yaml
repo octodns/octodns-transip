@@ -181,11 +181,11 @@ tlsa:
   tll: 600
   type: 'TLSA'
   values:
-    - certificate_association_data: ABABABABABABABABAB
+    - certificate_association_data: ababababababababab
       certificate_usage: 1
       matching_type: 1
       selector: 1
-    - certificate_association_data: ABABABABABABABABAC
+    - certificate_association_data: ababababababababac
       certificate_usage: 2
       matching_type: 2
       selector: 0
