@@ -32,7 +32,9 @@ from octodns_transip import (
 
 def make_expected():
     expected = Zone("unit.tests.", [])
-    source = YamlProvider("test", join(dirname(__file__), "config"))
+    source = YamlProvider(
+        "test", join(dirname(__file__), "config"), escaped_semicolons=False
+    )
     source.populate(expected)
     return expected
 
